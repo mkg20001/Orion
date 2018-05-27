@@ -233,6 +233,7 @@ function startOrion () {
         app.mainWindow = StorageWindow.create(app)
         app.mainWindow.on('ready-to-show', () => {
           loadingWindow.close()
+          process.crash()
         })
       })
       // Catch errors
