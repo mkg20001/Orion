@@ -3,6 +3,7 @@ import ReactDom from 'react-dom'
 // Load Components
 import { Window, Content } from 'react-photonkit'
 import { trackEvent } from '../../stats'
+import { dialog } from 'electron'
 
 // Load API and custom stuff
 import {
@@ -23,6 +24,8 @@ import Footer from './Components/Footer'
 // Load MobX Stores
 import StorageStore from './Stores/Storage'
 import StatusStore from './Stores/Status'
+
+const { captureException, captureMessage } = require('@sentry/electron')
 
 // Setup drag and drop events for adding files
 setupAddAppOnDrop()
@@ -63,7 +66,25 @@ function startLoop () {
 class App extends React.Component {
   componentDidMount () {
     trackEvent('StorageWindowOpen', {})
-    promiseIPFSReady().then(startLoop)
+    promiseIPFSReady()
+      .then(startLoop)
+      .catch(err => {
+        let message
+        if (typeof err === 'string') {
+          message = err
+        } else if (err.message) {
+          message = err.message
+        } else {
+          message = JSON.stringify(err)
+        }
+        dialog.showMessageBox({ type: 'warning', message })
+        // sentry reporting
+        if (typeof err === 'string') {
+          captureMessage(err)
+        } else {
+          captureException(err)
+        }
+      })
   }
 
   componentWillUnmount () {
